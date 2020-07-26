@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
+import 'main.dart';
+
 class Draw extends StatefulWidget {
   @override
   _DrawState createState() => _DrawState();
@@ -25,6 +27,41 @@ class _DrawState extends State<Draw> {
     Colors.amber,
     Colors.black
   ];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    roomSubject.listen((value) {
+      data.split("\n").forEach((line) {
+        var ar = line.split("::!!::");
+        if (ar[0] == "POINT") {
+          double x = double.tryParse(ar[1]);
+          double y = double.tryParse(ar[2]);
+          if (x == null || y == null) {
+            return;
+          }
+          print("writing them?");
+          RenderBox renderBox = context.findRenderObject();
+          setState(() {
+            points.add(DrawingPoints(
+                points: renderBox.globalToLocal(Offset(x, y)),
+                paint: Paint()
+                  ..strokeCap = strokeCap
+                  ..isAntiAlias = true
+                  ..color = selectedColor.withOpacity(opacity)
+                  ..strokeWidth = strokeWidth));
+          });
+        } else if (ar[0] == "ENDPOINTS") {
+          setState(() {
+            points.add(null);
+            print("endpoints set state wrote?");
+          });
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
