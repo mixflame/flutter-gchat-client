@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:draw/gdraw.dart';
@@ -14,11 +15,17 @@ int canvasSizeX;
 int canvasSizeY = 0;
 int totalPoints;
 
+// drawing
+Map<String, int> nameHash = Map(); // which layer is this handle on
+List<String> layerOrder = List(); // which order to draw layers
+Map<String, List<DrawingPoint>> layers = Map(); // which points are in a layer
+List<DrawingPoint> points = List();
+
 class _DrawState extends State<Draw> {
   Color selectedColor = Colors.black;
   Color pickerColor = Colors.black;
   double strokeWidth = 3.0;
-  List<DrawingPoints> points = List();
+
   bool showBottomList = false;
   double opacity = 1.0;
   StrokeCap strokeCap = (Platform.isAndroid) ? StrokeCap.butt : StrokeCap.round;
@@ -58,21 +65,17 @@ class _DrawState extends State<Draw> {
         return;
       }
       bool dragging = parr[2] == "true" ? true : false;
-      int red = double.tryParse(parr[3]).round() * 255;
-      int green = double.tryParse(parr[4]).round() * 255;
-      int blue = double.tryParse(parr[5]).round() * 255;
+      int red = (double.tryParse(parr[3]) * 255.0).round();
+      int green = (double.tryParse(parr[4]) * 255.0).round();
+      int blue = (double.tryParse(parr[5]) * 255.0).round();
+
       double opacity = double.tryParse(parr[6]);
       double width = double.tryParse(parr[7]);
       String clickName = parr[8];
       RenderBox renderBox = context.findRenderObject();
       setState(() {
-        points.add(DrawingPoints(
-            points: renderBox.globalToLocal(Offset(x, y)),
-            paint: Paint()
-              ..strokeCap = StrokeCap.round
-              ..isAntiAlias = false
-              ..color = Color.fromRGBO(red, green, blue, opacity)
-              ..strokeWidth = width));
+        addClick(renderBox, x, y, dragging, red, green, blue, opacity, width,
+            clickName);
       });
     });
 
@@ -173,8 +176,8 @@ class _DrawState extends State<Draw> {
         onPanUpdate: (details) {
           setState(() {
             RenderBox renderBox = context.findRenderObject();
-            points.add(DrawingPoints(
-                points: renderBox.globalToLocal(details.globalPosition),
+            points.add(DrawingPoint(
+                point: renderBox.globalToLocal(details.globalPosition),
                 paint: Paint()
                   ..strokeCap = strokeCap
                   ..isAntiAlias = true
@@ -185,8 +188,8 @@ class _DrawState extends State<Draw> {
         onPanStart: (details) {
           setState(() {
             RenderBox renderBox = context.findRenderObject();
-            points.add(DrawingPoints(
-                points: renderBox.globalToLocal(details.globalPosition),
+            points.add(DrawingPoint(
+                point: renderBox.globalToLocal(details.globalPosition),
                 paint: Paint()
                   ..strokeCap = strokeCap
                   ..isAntiAlias = true
@@ -277,10 +280,53 @@ class _DrawState extends State<Draw> {
       ),
     );
   }
+
+  void addClick(RenderBox renderBox, double x, double y, bool dragging, int red,
+      int green, int blue, alpha, double rxWidth, String clickName) {
+    DrawingPoint pt = DrawingPoint(
+        dragging: dragging,
+        clickName: clickName,
+        point: renderBox.globalToLocal(Offset(x, y)),
+        paint: Paint()
+          ..strokeCap = StrokeCap.round
+          ..isAntiAlias = false
+          ..color = Color.fromRGBO(red, green, blue, opacity)
+          ..strokeWidth = rxWidth);
+
+    points.add(pt);
+
+    String layerName = "";
+
+    if (!nameHash.containsKey(clickName)) {
+      int layer = 0;
+      nameHash[clickName] = layer;
+      layerName = "$clickName::!!::$layer";
+      List<DrawingPoint> layerArray = List();
+    } else {
+      if (!dragging) {
+        int layer = nameHash[clickName] + 1;
+        nameHash[clickName] = layer;
+        layerName = "$clickName::!!::$layer";
+        List<DrawingPoint> layerArray = List();
+        layers[layerName] = layerArray;
+      } else {
+        int layer = nameHash[clickName];
+        layerName = "$clickName::!!::$layer";
+      }
+    }
+
+    List<DrawingPoint> tempLayer = layers[layerName];
+    tempLayer.add(pt);
+    layers[layerName] = tempLayer;
+
+    if (!layerOrder.contains(layerName)) {
+      layerOrder.add(layerName);
+    }
+  }
 }
 
 class DrawingPainter extends CustomPainter {
-  List<DrawingPoints> pointsList;
+  List<DrawingPoint> pointsList;
   List<Offset> offsetPoints = List();
   DrawingPainter({this.pointsList});
 
@@ -290,28 +336,51 @@ class DrawingPainter extends CustomPainter {
       canvas.translate(0, canvasSizeY.toDouble());
       canvas.scale(1, -1);
     }
-    for (int i = 0; i < pointsList.length - 1; i++) {
-      if (pointsList[i] != null && pointsList[i + 1] != null) {
-        canvas.drawLine(pointsList[i].points, pointsList[i + 1].points,
-            pointsList[i].paint);
-      } else if (pointsList[i] != null && pointsList[i + 1] == null) {
-        offsetPoints.clear();
-        offsetPoints.add(pointsList[i].points);
-        offsetPoints.add(Offset(
-            pointsList[i].points.dx + 0.1, pointsList[i].points.dy + 0.1));
-        canvas.drawPoints(PointMode.points, offsetPoints, pointsList[i].paint);
+
+    // for (int i = 0; i < pointsList.length - 1; i++) {
+    //   if (pointsList[i] != null && pointsList[i + 1] != null) {
+    //     canvas.drawLine(pointsList[i].points, pointsList[i + 1].points,
+    //         pointsList[i].paint);
+    //   } else if (pointsList[i] != null && pointsList[i + 1] == null) {
+    //     offsetPoints.clear();
+    //     offsetPoints.add(pointsList[i].points);
+    //     offsetPoints.add(Offset(
+    //         pointsList[i].points.dx + 0.1, pointsList[i].points.dy + 0.1));
+    //     canvas.drawPoints(PointMode.points, offsetPoints, pointsList[i].paint);
+    //   }
+    // }
+
+    layerOrder.forEach((layer) {
+      List<DrawingPoint> layerArray = layers[layer];
+      for (int i = 0; i < layerArray.length - 1; i++) {
+        DrawingPoint thisObj = layerArray[i];
+        Offset thisPoint = thisObj.point;
+        if (thisObj.dragging && i > 0) {
+          Offset lastPoint = layerArray[i - 1].point;
+          drawLineTo(canvas, lastPoint, thisPoint, thisObj.paint);
+        } else {
+          Offset drawPoint = Offset(thisPoint.dx - 1, thisPoint.dy);
+          drawLineTo(canvas, thisPoint, drawPoint, thisObj.paint);
+        }
       }
-    }
+    });
   }
 
   @override
   bool shouldRepaint(DrawingPainter oldDelegate) => true;
 }
 
-class DrawingPoints {
+void drawLineTo(
+    Canvas canvas, Offset lastPoint, Offset thisPoint, Paint paint) {
+  canvas.drawLine(lastPoint, thisPoint, paint);
+}
+
+class DrawingPoint {
+  bool dragging;
+  String clickName = "";
   Paint paint;
-  Offset points;
-  DrawingPoints({this.points, this.paint});
+  Offset point;
+  DrawingPoint({this.dragging, this.point, this.paint, this.clickName});
 }
 
 enum SelectedMode { StrokeWidth, Opacity, Color }
