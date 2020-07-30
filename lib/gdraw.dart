@@ -95,8 +95,8 @@ class GDraw {
     handlers[command] = handler;
   }
 
-  void sendPoint(Offset pout, bool dragging, int red, int green, int blue,
-      double alpha, double width, String handle) {
+  void sendPoint(
+      Offset pout, bool dragging, Color color, double width, String handle) {
     double x = pout.dx;
     double y = pout.dy;
     print("---> $x $y");
@@ -104,10 +104,10 @@ class GDraw {
     point.add(x.toString());
     point.add(y.toString());
     point.add(dragging.toString());
-    point.add(red.toString());
-    point.add(green.toString());
-    point.add(blue.toString());
-    point.add(alpha.toString());
+    point.add((color.red / 255.0).toString());
+    point.add((color.green / 255.0).toString());
+    point.add((color.blue / 255.0).toString());
+    point.add(color.opacity.toString());
     point.add(width.toString());
     point.add(token);
     send(GMessage("POINT", point));

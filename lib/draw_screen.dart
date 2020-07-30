@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'dart:ui';
 
 import 'package:draw/gdraw.dart';
@@ -76,9 +75,9 @@ class _DrawState extends State<Draw> {
       double width = double.tryParse(parr[7]);
       String clickName = parr[8];
       RenderBox renderBox = context.findRenderObject();
+      Color color = Color.fromRGBO(red, green, blue, opacity);
       setState(() {
-        addClick(renderBox, position, dragging, red, green, blue, opacity,
-            width, clickName);
+        addClick(renderBox, position, dragging, color, width, clickName);
       });
     });
 
@@ -209,12 +208,10 @@ class _DrawState extends State<Draw> {
     Offset point = renderBox.globalToLocal(globalPosition);
     Color color = selectedColor.withOpacity(opacity);
 
-    addClick(renderBox, point, dragging, color.red, color.green, color.blue,
-        color.opacity, strokeWidth, gdraw.handle);
+    addClick(renderBox, point, dragging, color, strokeWidth, gdraw.handle);
 
     Offset pout = convertFlutterPointToSwiftPoint(point);
-    gdraw.sendPoint(pout, dragging, color.red, color.green, color.blue,
-        color.opacity, strokeWidth, gdraw.handle);
+    gdraw.sendPoint(pout, dragging, color, strokeWidth, gdraw.handle);
   }
 
   getColorList() {
@@ -286,8 +283,8 @@ class _DrawState extends State<Draw> {
     );
   }
 
-  void addClick(RenderBox renderBox, Offset position, bool dragging, int red,
-      int green, int blue, alpha, double rxWidth, String clickName) {
+  void addClick(RenderBox renderBox, Offset position, bool dragging,
+      Color color, double rxWidth, String clickName) {
     print("addClick $position");
 
     DrawingPoint pt = DrawingPoint(
@@ -297,7 +294,7 @@ class _DrawState extends State<Draw> {
         paint: Paint()
           ..strokeCap = StrokeCap.round
           ..isAntiAlias = false
-          ..color = Color.fromRGBO(red, green, blue, opacity)
+          ..color = color
           ..strokeWidth = rxWidth);
 
     points.add(pt);
