@@ -61,9 +61,12 @@ class _DrawState extends State<Draw> {
       var parr = msg.arguments;
       double x = double.tryParse(parr[0]);
       double y = double.tryParse(parr[1]);
+
       if (x == null || y == null) {
         return;
       }
+
+      Offset position = convertSwiftPointToFlutterPoint(Offset(x, y));
       bool dragging = parr[2] == "true" ? true : false;
       int red = (double.tryParse(parr[3]) * 255.0).round();
       int green = (double.tryParse(parr[4]) * 255.0).round();
@@ -74,14 +77,14 @@ class _DrawState extends State<Draw> {
       String clickName = parr[8];
       RenderBox renderBox = context.findRenderObject();
       setState(() {
-        addClick(renderBox, x, y, dragging, red, green, blue, opacity, width,
-            clickName);
+        addClick(renderBox, position, dragging, red, green, blue, opacity,
+            width, clickName);
       });
     });
 
     gdraw.registerProtocolHandler("ENDPOINTS", (msg) {
       setState(() {
-        points.add(null);
+        //points.add(null);
         print("endpoints set state wrote?");
       });
     });
@@ -175,41 +178,43 @@ class _DrawState extends State<Draw> {
       body: GestureDetector(
         onPanUpdate: (details) {
           setState(() {
-            RenderBox renderBox = context.findRenderObject();
-            points.add(DrawingPoint(
-                point: renderBox.globalToLocal(details.globalPosition),
-                paint: Paint()
-                  ..strokeCap = strokeCap
-                  ..isAntiAlias = true
-                  ..color = selectedColor.withOpacity(opacity)
-                  ..strokeWidth = strokeWidth));
+            makePoint(context, details.globalPosition, dragging: true);
           });
         },
         onPanStart: (details) {
           setState(() {
-            RenderBox renderBox = context.findRenderObject();
-            points.add(DrawingPoint(
-                point: renderBox.globalToLocal(details.globalPosition),
-                paint: Paint()
-                  ..strokeCap = strokeCap
-                  ..isAntiAlias = true
-                  ..color = selectedColor.withOpacity(opacity)
-                  ..strokeWidth = strokeWidth));
+            makePoint(context, details.globalPosition, dragging: false);
           });
         },
         onPanEnd: (details) {
           setState(() {
-            points.add(null);
+            // points.add(null);
           });
         },
         child: CustomPaint(
-          size: Size.infinite,
+          size: canvasSizeY > 0
+              ? Size(canvasSizeX.toDouble(), canvasSizeY.toDouble())
+              : Size.infinite,
           painter: DrawingPainter(
             pointsList: points,
           ),
         ),
       ),
     );
+  }
+
+  void makePoint(BuildContext context, Offset globalPosition, {bool dragging}) {
+    RenderBox renderBox = context.findRenderObject();
+
+    Offset point = renderBox.globalToLocal(globalPosition);
+    Color color = selectedColor.withOpacity(opacity);
+
+    addClick(renderBox, point, dragging, color.red, color.green, color.blue,
+        color.opacity, strokeWidth, gdraw.handle);
+
+    Offset pout = convertFlutterPointToSwiftPoint(point);
+    gdraw.sendPoint(pout, dragging, color.red, color.green, color.blue,
+        color.opacity, strokeWidth, gdraw.handle);
   }
 
   getColorList() {
@@ -281,12 +286,14 @@ class _DrawState extends State<Draw> {
     );
   }
 
-  void addClick(RenderBox renderBox, double x, double y, bool dragging, int red,
+  void addClick(RenderBox renderBox, Offset position, bool dragging, int red,
       int green, int blue, alpha, double rxWidth, String clickName) {
+    print("addClick $position");
+
     DrawingPoint pt = DrawingPoint(
         dragging: dragging,
         clickName: clickName,
-        point: renderBox.globalToLocal(Offset(x, y)),
+        point: position,
         paint: Paint()
           ..strokeCap = StrokeCap.round
           ..isAntiAlias = false
@@ -302,6 +309,7 @@ class _DrawState extends State<Draw> {
       nameHash[clickName] = layer;
       layerName = "$clickName::!!::$layer";
       List<DrawingPoint> layerArray = List();
+      layers[layerName] = layerArray;
     } else {
       if (!dragging) {
         int layer = nameHash[clickName] + 1;
@@ -332,24 +340,6 @@ class DrawingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (canvasSizeY > 0) {
-      canvas.translate(0, canvasSizeY.toDouble());
-      canvas.scale(1, -1);
-    }
-
-    // for (int i = 0; i < pointsList.length - 1; i++) {
-    //   if (pointsList[i] != null && pointsList[i + 1] != null) {
-    //     canvas.drawLine(pointsList[i].points, pointsList[i + 1].points,
-    //         pointsList[i].paint);
-    //   } else if (pointsList[i] != null && pointsList[i + 1] == null) {
-    //     offsetPoints.clear();
-    //     offsetPoints.add(pointsList[i].points);
-    //     offsetPoints.add(Offset(
-    //         pointsList[i].points.dx + 0.1, pointsList[i].points.dy + 0.1));
-    //     canvas.drawPoints(PointMode.points, offsetPoints, pointsList[i].paint);
-    //   }
-    // }
-
     layerOrder.forEach((layer) {
       List<DrawingPoint> layerArray = layers[layer];
       for (int i = 0; i < layerArray.length - 1; i++) {
@@ -381,6 +371,14 @@ class DrawingPoint {
   Paint paint;
   Offset point;
   DrawingPoint({this.dragging, this.point, this.paint, this.clickName});
+}
+
+Offset convertSwiftPointToFlutterPoint(Offset pt) {
+  return pt.scale(1, -1).translate(0, canvasSizeY.toDouble());
+}
+
+Offset convertFlutterPointToSwiftPoint(Offset pt) {
+  return pt.translate(0, -canvasSizeY.toDouble()).scale(1, -1);
 }
 
 enum SelectedMode { StrokeWidth, Opacity, Color }
