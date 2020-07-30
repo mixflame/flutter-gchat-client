@@ -1,15 +1,18 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:draw/gdraw.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-
-import 'main.dart';
 
 class Draw extends StatefulWidget {
   @override
   _DrawState createState() => _DrawState();
 }
+
+int canvasSizeX;
+int canvasSizeY = 0;
+int totalPoints;
 
 class _DrawState extends State<Draw> {
   Color selectedColor = Colors.black;
@@ -28,38 +31,59 @@ class _DrawState extends State<Draw> {
     Colors.black
   ];
 
+  GDraw gdraw;
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    roomSubject.listen((value) {
-      data.split("\n").forEach((line) {
-        var ar = line.split("::!!::");
-        if (ar[0] == "POINT") {
-          double x = double.tryParse(ar[1]);
-          double y = double.tryParse(ar[2]);
-          if (x == null || y == null) {
-            return;
-          }
-          print("writing them?");
-          RenderBox renderBox = context.findRenderObject();
-          setState(() {
-            points.add(DrawingPoints(
-                points: renderBox.globalToLocal(Offset(x, y)),
-                paint: Paint()
-                  ..strokeCap = strokeCap
-                  ..isAntiAlias = true
-                  ..color = selectedColor.withOpacity(opacity)
-                  ..strokeWidth = strokeWidth));
-          });
-        } else if (ar[0] == "ENDPOINTS") {
-          setState(() {
-            points.add(null);
-            print("endpoints set state wrote?");
-          });
-        }
+
+    gdraw = GDraw();
+
+    gdraw.registerProtocolHandler("CANVAS", (msg) {
+      var sizeArr = msg.arguments[0].split("x");
+      canvasSizeX = int.parse(sizeArr[0]);
+      canvasSizeY = int.parse(sizeArr[1]);
+      totalPoints = int.parse(msg.arguments[1]);
+      setState(() {
+        print("set the canvas size $canvasSizeX $canvasSizeY plz redrwa");
+      });
+      gdraw.send(GMessage("GETPOINTS", [gdraw.token]));
+    });
+
+    gdraw.registerProtocolHandler("POINT", (msg) {
+      var parr = msg.arguments;
+      double x = double.tryParse(parr[0]);
+      double y = double.tryParse(parr[1]);
+      if (x == null || y == null) {
+        return;
+      }
+      bool dragging = parr[2] == "true" ? true : false;
+      int red = double.tryParse(parr[3]).round() * 255;
+      int green = double.tryParse(parr[4]).round() * 255;
+      int blue = double.tryParse(parr[5]).round() * 255;
+      double opacity = double.tryParse(parr[6]);
+      double width = double.tryParse(parr[7]);
+      String clickName = parr[8];
+      RenderBox renderBox = context.findRenderObject();
+      setState(() {
+        points.add(DrawingPoints(
+            points: renderBox.globalToLocal(Offset(x, y)),
+            paint: Paint()
+              ..strokeCap = StrokeCap.round
+              ..isAntiAlias = false
+              ..color = Color.fromRGBO(red, green, blue, opacity)
+              ..strokeWidth = width));
       });
     });
+
+    gdraw.registerProtocolHandler("ENDPOINTS", (msg) {
+      setState(() {
+        points.add(null);
+        print("endpoints set state wrote?");
+      });
+    });
+
+    gdraw.start();
   }
 
   @override
@@ -256,11 +280,16 @@ class _DrawState extends State<Draw> {
 }
 
 class DrawingPainter extends CustomPainter {
-  DrawingPainter({this.pointsList});
   List<DrawingPoints> pointsList;
   List<Offset> offsetPoints = List();
+  DrawingPainter({this.pointsList});
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (canvasSizeY > 0) {
+      canvas.translate(0, canvasSizeY.toDouble());
+      canvas.scale(1, -1);
+    }
     for (int i = 0; i < pointsList.length - 1; i++) {
       if (pointsList[i] != null && pointsList[i + 1] != null) {
         canvas.drawLine(pointsList[i].points, pointsList[i + 1].points,
