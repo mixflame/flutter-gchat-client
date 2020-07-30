@@ -31,9 +31,9 @@ class GDraw {
 
   var buf = "";
 
-  String handle = "flutter";
-  String host = "64.225.115.44";
-  int port = 9617;
+  String host;
+  int port;
+  String handle;
 
   void start() {
     Socket.connect(host, port).then((Socket _sock) {
@@ -86,8 +86,9 @@ class GDraw {
   }
 
   void send(GMessage msg) {
-    print("Client: $msg");
-    sock.write(msg.toString());
+    String out = msg.toString();
+    print("Client: $out");
+    sock.write(out);
   }
 
   void registerProtocolHandler(
@@ -99,7 +100,6 @@ class GDraw {
       Offset pout, bool dragging, Color color, double width, String handle) {
     double x = pout.dx;
     double y = pout.dy;
-    print("---> $x $y");
     List<String> point = List();
     point.add(x.toString());
     point.add(y.toString());
@@ -111,5 +111,17 @@ class GDraw {
     point.add(width.toString());
     point.add(token);
     send(GMessage("POINT", point));
+  }
+
+  void setHost(String s) {
+    this.host = s;
+  }
+
+  void setPort(int i) {
+    this.port = i;
+  }
+
+  void setHandle(String s) {
+    this.handle = s;
   }
 }

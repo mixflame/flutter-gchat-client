@@ -76,6 +76,7 @@ class _DrawState extends State<Draw> {
       String clickName = parr[8];
       RenderBox renderBox = context.findRenderObject();
       Color color = Color.fromRGBO(red, green, blue, opacity);
+
       setState(() {
         addClick(renderBox, position, dragging, color, width, clickName);
       });
@@ -88,6 +89,9 @@ class _DrawState extends State<Draw> {
       });
     });
 
+    gdraw.setHost("64.225.115.44");
+    gdraw.setPort(9617);
+    gdraw.setHandle("flutter");
     gdraw.start();
   }
 
