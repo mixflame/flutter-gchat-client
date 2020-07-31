@@ -1,13 +1,17 @@
-import 'package:draw/draw_screen.dart';
 import 'package:flutter/material.dart';
 
+import './pages/homepage.dart';
+
 void main() {
-  runApp(DrawApp());
+  runApp(MyApp());
 }
 
-class DrawApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: Draw());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: HomePage(),
+    );
   }
 }
