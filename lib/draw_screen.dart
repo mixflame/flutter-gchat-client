@@ -351,6 +351,7 @@ class DrawingPainter extends CustomPainter {
           drawLineTo(canvas, lastPoint, thisPoint, thisObj.paint);
         } else {
           Offset drawPoint = Offset(thisPoint.dx - 1, thisPoint.dy);
+          // drawPoint()
           drawLineTo(canvas, thisPoint, drawPoint, thisObj.paint);
         }
       }

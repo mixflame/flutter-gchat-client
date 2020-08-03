@@ -10,9 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^0.1.2
-  rxdart: any
+  flutter_bloc: ^5.0.0
+  rxdart: ^0.23.1
   flutter_sodium: any
+  equatable: ^1.0.0
   
 dev_dependencies:
   flutter_test:
