@@ -34,6 +34,7 @@ class GDraw {
   String host;
   int port;
   String handle;
+  String password; // plaintext password
 
   void start() {
     Socket.connect(host, port).then((Socket _sock) {

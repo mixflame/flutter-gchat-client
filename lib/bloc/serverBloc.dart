@@ -11,7 +11,7 @@ class ServerBloc {
   ServerBloc() {
     //The Stream is listening to the Function.
     stream.listen((Event event) {
-      if event i
+      // if event i
       print("got event $event");
     });
   }

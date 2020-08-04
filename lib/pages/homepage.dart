@@ -1,5 +1,6 @@
 import 'package:draw/pages/serverTab.dart';
 import 'package:flutter/material.dart';
+import '../draw_screen.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -16,6 +17,7 @@ class _HomePageState extends State<HomePage> {
         appBar: AppBar(title: const Text("GlobalChat Draw")),
         body: Container(
           child: TabBarView(
+            physics: NeverScrollableScrollPhysics(),
             //Pages Switches on selection of the respective tabs.
             children: <Widget>[
               //TabView 1
@@ -23,10 +25,11 @@ class _HomePageState extends State<HomePage> {
 
               //TabView 2
               ServerTab(),
-              ServerTab(),
+
               //ChatTab(),
 
               //DrawTab(),
+              Draw()
             ],
           ),
         ),

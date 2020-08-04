@@ -13,6 +13,7 @@ class Draw extends StatefulWidget {
 int canvasSizeX;
 int canvasSizeY = 0;
 int totalPoints;
+GDraw gdraw;
 
 // drawing
 Map<String, int> nameHash = Map(); // which layer is this handle on
@@ -37,13 +38,9 @@ class _DrawState extends State<Draw> {
     Colors.black
   ];
 
-  GDraw gdraw;
-
   @override
   void initState() {
     super.initState();
-
-    gdraw = GDraw();
 
     gdraw.registerProtocolHandler("CANVAS", (msg) {
       var sizeArr = msg.arguments[0].split("x");
