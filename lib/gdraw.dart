@@ -4,6 +4,8 @@ import 'dart:ui';
 
 import 'package:flutter_sodium/flutter_sodium.dart';
 import 'package:rxdart/rxdart.dart';
+import 'pages/homepage.dart';
+import 'draw_screen.dart';
 
 class GMessage {
   String command = "";
@@ -36,7 +38,47 @@ class GDraw {
   String handle;
   String password; // plaintext password
 
+  int canvasSizeX;
+  int canvasSizeY = 0;
+  int totalPoints;
+
+  Draw draw;
+
   void start() {
+    registerProtocolHandler("CANVAS", (msg) {
+      var sizeArr = msg.arguments[0].split("x");
+      canvasSizeX = int.parse(sizeArr[0]);
+      canvasSizeY = int.parse(sizeArr[1]);
+      totalPoints = int.parse(msg.arguments[1]);
+    });
+
+    registerProtocolHandler("POINT", (msg) {
+      var parr = msg.arguments;
+      double x = double.tryParse(parr[0]);
+      double y = double.tryParse(parr[1]);
+
+      if (x == null || y == null) {
+        return;
+      }
+
+      Offset position = convertSwiftPointToFlutterPoint(Offset(x, y));
+      bool dragging = parr[2] == "true" ? true : false;
+      int red = (double.tryParse(parr[3]) * 255.0).round();
+      int green = (double.tryParse(parr[4]) * 255.0).round();
+      int blue = (double.tryParse(parr[5]) * 255.0).round();
+
+      double opacity = double.tryParse(parr[6]);
+      double width = double.tryParse(parr[7]);
+      String clickName = parr[8];
+
+      Color color = Color.fromRGBO(red, green, blue, opacity);
+
+      drawkey.currentState
+          .addClick(position, dragging, color, width, clickName);
+    });
+
+    // gdraw.registerProtocolHandler("ENDPOINTS", (msg) {});
+
     Socket.connect(host, port).then((Socket _sock) {
       sock = _sock;
       sock.listen(handleData, onError: (error, StackTrace trace) {

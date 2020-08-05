@@ -15,7 +15,11 @@ class ServerTab extends StatefulWidget {
   _ServerTabState createState() => _ServerTabState();
 }
 
-class _ServerTabState extends State<ServerTab> {
+class _ServerTabState extends State<ServerTab>
+    with AutomaticKeepAliveClientMixin<ServerTab> {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
     super.initState();
@@ -77,7 +81,6 @@ class _ServerTabState extends State<ServerTab> {
           RaisedButton(
             onPressed: () {
               setState(() {
-                // serverBloc.sink(ServerConnectEvent());
                 gdraw = GDraw();
                 gdraw.host = host;
                 gdraw.port = port;
