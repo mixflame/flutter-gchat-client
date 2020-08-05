@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_sodium/flutter_sodium.dart';
 import 'package:rxdart/rxdart.dart';
 import 'pages/homepage.dart';
 import 'draw_screen.dart';
+import 'pages/serverTab.dart';
 
 class GMessage {
   String command = "";
@@ -24,6 +26,9 @@ class GMessage {
 }
 
 class GDraw {
+  BuildContext context;
+  GDraw({this.context});
+
   Socket sock;
   final subject = BehaviorSubject<GMessage>();
   String serverPublicKey;
@@ -109,8 +114,10 @@ class GDraw {
 
       send(GMessage("KEY", [base64Encode(ourKeyPair.pk)]));
       send(GMessage("SIGNON", [handle]));
+      showAlertDialog(context, "connected to globalchat server", "connected.");
     }).catchError((e) {
       print("unable to connect: $e");
+      showAlertDialog(context, "failed to connect", "connection failed.");
     });
   }
 
