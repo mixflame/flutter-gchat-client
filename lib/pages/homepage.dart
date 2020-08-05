@@ -2,12 +2,18 @@ import 'package:draw/pages/serverTab.dart';
 import 'package:flutter/material.dart';
 import '../draw_screen.dart';
 
+final drawkey = new GlobalKey<DrawState>();
+
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin<HomePage> {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -29,7 +35,7 @@ class _HomePageState extends State<HomePage> {
               //ChatTab(),
 
               //DrawTab(),
-              Draw()
+              Draw(key: drawkey)
             ],
           ),
         ),

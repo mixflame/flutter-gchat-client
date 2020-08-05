@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class Draw extends StatefulWidget {
+  Draw({Key key}) : super(key: key);
+  final DrawState _drawState = DrawState();
+
   @override
-  _DrawState createState() => _DrawState();
+  DrawState createState() => _drawState;
 }
 
-int canvasSizeX;
-int canvasSizeY = 0;
-int totalPoints;
 GDraw gdraw;
 
 // drawing
@@ -21,7 +21,7 @@ List<String> layerOrder = List(); // which order to draw layers
 Map<String, List<DrawingPoint>> layers = Map(); // which points are in a layer
 List<DrawingPoint> points = List();
 
-class _DrawState extends State<Draw> {
+class DrawState extends State<Draw> with AutomaticKeepAliveClientMixin<Draw> {
   Color selectedColor = Colors.black;
   Color pickerColor = Colors.black;
   double strokeWidth = 3.0;
@@ -39,57 +39,12 @@ class _DrawState extends State<Draw> {
   ];
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
-
-    gdraw.registerProtocolHandler("CANVAS", (msg) {
-      var sizeArr = msg.arguments[0].split("x");
-      canvasSizeX = int.parse(sizeArr[0]);
-      canvasSizeY = int.parse(sizeArr[1]);
-      totalPoints = int.parse(msg.arguments[1]);
-      setState(() {
-        print("set the canvas size $canvasSizeX $canvasSizeY plz redrwa");
-      });
-      gdraw.send(GMessage("GETPOINTS", [gdraw.token]));
-    });
-
-    gdraw.registerProtocolHandler("POINT", (msg) {
-      var parr = msg.arguments;
-      double x = double.tryParse(parr[0]);
-      double y = double.tryParse(parr[1]);
-
-      if (x == null || y == null) {
-        return;
-      }
-
-      Offset position = convertSwiftPointToFlutterPoint(Offset(x, y));
-      bool dragging = parr[2] == "true" ? true : false;
-      int red = (double.tryParse(parr[3]) * 255.0).round();
-      int green = (double.tryParse(parr[4]) * 255.0).round();
-      int blue = (double.tryParse(parr[5]) * 255.0).round();
-
-      double opacity = double.tryParse(parr[6]);
-      double width = double.tryParse(parr[7]);
-      String clickName = parr[8];
-      RenderBox renderBox = context.findRenderObject();
-      Color color = Color.fromRGBO(red, green, blue, opacity);
-
-      setState(() {
-        addClick(renderBox, position, dragging, color, width, clickName);
-      });
-    });
-
-    gdraw.registerProtocolHandler("ENDPOINTS", (msg) {
-      setState(() {
-        //points.add(null);
-        print("endpoints set state wrote?");
-      });
-    });
-
-    gdraw.setHost("64.225.115.44");
-    gdraw.setPort(9617);
-    gdraw.setHandle("flutter");
-    gdraw.start();
+    gdraw.send(GMessage("GETPOINTS", [gdraw.token]));
   }
 
   @override
@@ -192,8 +147,8 @@ class _DrawState extends State<Draw> {
           });
         },
         child: CustomPaint(
-          size: canvasSizeY > 0
-              ? Size(canvasSizeX.toDouble(), canvasSizeY.toDouble())
+          size: gdraw.canvasSizeY > 0
+              ? Size(gdraw.canvasSizeX.toDouble(), gdraw.canvasSizeY.toDouble())
               : Size.infinite,
           painter: DrawingPainter(
             pointsList: points,
@@ -209,7 +164,7 @@ class _DrawState extends State<Draw> {
     Offset point = renderBox.globalToLocal(globalPosition);
     Color color = selectedColor.withOpacity(opacity);
 
-    addClick(renderBox, point, dragging, color, strokeWidth, gdraw.handle);
+    addClick(point, dragging, color, strokeWidth, gdraw.handle);
 
     Offset pout = convertFlutterPointToSwiftPoint(point);
     gdraw.sendPoint(pout, dragging, color, strokeWidth, gdraw.handle);
@@ -284,50 +239,52 @@ class _DrawState extends State<Draw> {
     );
   }
 
-  void addClick(RenderBox renderBox, Offset position, bool dragging,
-      Color color, double rxWidth, String clickName) {
-    print("addClick $position");
+  void addClick(Offset position, bool dragging, Color color, double rxWidth,
+      String clickName) {
+    setState(() {
+      print("addClick $position");
 
-    DrawingPoint pt = DrawingPoint(
-        dragging: dragging,
-        clickName: clickName,
-        point: position,
-        paint: Paint()
-          ..strokeCap = StrokeCap.round
-          ..isAntiAlias = false
-          ..color = color
-          ..strokeWidth = rxWidth);
+      DrawingPoint pt = DrawingPoint(
+          dragging: dragging,
+          clickName: clickName,
+          point: position,
+          paint: Paint()
+            ..strokeCap = StrokeCap.round
+            ..isAntiAlias = false
+            ..color = color
+            ..strokeWidth = rxWidth);
 
-    points.add(pt);
+      points.add(pt);
 
-    String layerName = "";
+      String layerName = "";
 
-    if (!nameHash.containsKey(clickName)) {
-      int layer = 0;
-      nameHash[clickName] = layer;
-      layerName = "$clickName::!!::$layer";
-      List<DrawingPoint> layerArray = List();
-      layers[layerName] = layerArray;
-    } else {
-      if (!dragging) {
-        int layer = nameHash[clickName] + 1;
+      if (!nameHash.containsKey(clickName)) {
+        int layer = 0;
         nameHash[clickName] = layer;
         layerName = "$clickName::!!::$layer";
         List<DrawingPoint> layerArray = List();
         layers[layerName] = layerArray;
       } else {
-        int layer = nameHash[clickName];
-        layerName = "$clickName::!!::$layer";
+        if (!dragging) {
+          int layer = nameHash[clickName] + 1;
+          nameHash[clickName] = layer;
+          layerName = "$clickName::!!::$layer";
+          List<DrawingPoint> layerArray = List();
+          layers[layerName] = layerArray;
+        } else {
+          int layer = nameHash[clickName];
+          layerName = "$clickName::!!::$layer";
+        }
       }
-    }
 
-    List<DrawingPoint> tempLayer = layers[layerName];
-    tempLayer.add(pt);
-    layers[layerName] = tempLayer;
+      List<DrawingPoint> tempLayer = layers[layerName];
+      tempLayer.add(pt);
+      layers[layerName] = tempLayer;
 
-    if (!layerOrder.contains(layerName)) {
-      layerOrder.add(layerName);
-    }
+      if (!layerOrder.contains(layerName)) {
+        layerOrder.add(layerName);
+      }
+    });
   }
 }
 
@@ -372,11 +329,11 @@ class DrawingPoint {
 }
 
 Offset convertSwiftPointToFlutterPoint(Offset pt) {
-  return pt.scale(1, -1).translate(0, canvasSizeY.toDouble());
+  return pt.scale(1, -1).translate(0, gdraw.canvasSizeY.toDouble());
 }
 
 Offset convertFlutterPointToSwiftPoint(Offset pt) {
-  return pt.translate(0, -canvasSizeY.toDouble()).scale(1, -1);
+  return pt.translate(0, -gdraw.canvasSizeY.toDouble()).scale(1, -1);
 }
 
 enum SelectedMode { StrokeWidth, Opacity, Color }
