@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:convert' show utf8;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_sodium/flutter_sodium.dart';
@@ -92,7 +93,16 @@ class GDraw {
     });
 
     registerProtocolHandler("KEY", (GMessage msg) {
-      serverPublicKey = msg.arguments[0];
+      serverPublicKey = msg.arguments[0].trim();
+      if (password != "") {
+        List<int> passwordBytes = utf8.encode(password);
+        var encryptedPassword =
+            Sodium.cryptoBoxSeal(passwordBytes, base64Decode(serverPublicKey));
+        var passwordB64 = base64Encode(encryptedPassword);
+        send(GMessage("SIGNON", [handle, passwordB64]));
+      } else {
+        send(GMessage("SIGNON", [handle]));
+      }
     });
 
     // gdraw.registerProtocolHandler("ENDPOINTS", (msg) {});
@@ -118,7 +128,6 @@ class GDraw {
       });
 
       send(GMessage("KEY", [base64Encode(ourKeyPair.pk)]));
-      send(GMessage("SIGNON", [handle]));
       // showAlertDialog(context, "connected to globalchat server", "connected.");
     }).catchError((e) {
       print("unable to connect: $e");
