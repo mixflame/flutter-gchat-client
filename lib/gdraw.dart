@@ -50,6 +50,11 @@ class GDraw {
   Draw draw;
 
   void start() {
+    registerProtocolHandler("ALERT", (msg) {
+      var message = msg.arguments[0];
+      showAlertDialog(context, "Server Alert", message);
+    });
+
     registerProtocolHandler("CANVAS", (msg) {
       var sizeArr = msg.arguments[0].split("x");
       canvasSizeX = int.parse(sizeArr[0]);
@@ -82,6 +87,14 @@ class GDraw {
           .addClick(position, dragging, color, width, clickName);
     });
 
+    registerProtocolHandler("TOKEN", (GMessage msg) {
+      token = msg.arguments[0];
+    });
+
+    registerProtocolHandler("KEY", (GMessage msg) {
+      serverPublicKey = msg.arguments[0];
+    });
+
     // gdraw.registerProtocolHandler("ENDPOINTS", (msg) {});
 
     Socket.connect(host, port).then((Socket _sock) {
@@ -104,20 +117,12 @@ class GDraw {
         }
       });
 
-      registerProtocolHandler("TOKEN", (GMessage msg) {
-        token = msg.arguments[0];
-      });
-
-      registerProtocolHandler("KEY", (GMessage msg) {
-        serverPublicKey = msg.arguments[0];
-      });
-
       send(GMessage("KEY", [base64Encode(ourKeyPair.pk)]));
       send(GMessage("SIGNON", [handle]));
-      showAlertDialog(context, "connected to globalchat server", "connected.");
+      // showAlertDialog(context, "connected to globalchat server", "connected.");
     }).catchError((e) {
       print("unable to connect: $e");
-      showAlertDialog(context, "failed to connect", "connection failed.");
+      // showAlertDialog(context, "failed to connect", "connection failed.");
     });
   }
 
