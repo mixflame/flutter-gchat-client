@@ -6,14 +6,31 @@ import '../chat_screen.dart';
 final drawkey = new GlobalKey<DrawState>();
 
 class HomePage extends StatefulWidget {
+  HomePage({Key key}) : super(key: key);
+
   @override
-  _HomePageState createState() => _HomePageState();
+  HomePageState createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
+class HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin<HomePage> {
   @override
   bool get wantKeepAlive => true;
+
+  bool ignoring;
+
+  setIgnoringFalse() {
+    setState(() {
+      ignoring = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    ignoring = true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,28 +59,31 @@ class _HomePageState extends State<HomePage>
         ),
 
         //Actual Tabs at the bottom.
-        bottomNavigationBar: Container(
-          //Container used for rounded Corners on top.
-          child: TabBar(
-            tabs: <Widget>[
-              Tab(
-                //Tab 1
-                child: Text('Servers'),
-              ),
-              Tab(
-                //Tab 1
-                child: Text('Chat'),
-              ),
-              Tab(
-                //Tab 2
-                child: Text('Draw'),
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          height: 64,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
+        bottomNavigationBar: IgnorePointer(
+          ignoring: ignoring,
+          child: Container(
+            //Container used for rounded Corners on top.
+            child: TabBar(
+              tabs: <Widget>[
+                Tab(
+                  //Tab 1
+                  child: Text('Servers'),
+                ),
+                Tab(
+                  //Tab 1
+                  child: Text('Chat'),
+                ),
+                Tab(
+                  //Tab 2
+                  child: Text('Draw'),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+            ),
           ),
         ),
       ),

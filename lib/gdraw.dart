@@ -9,6 +9,7 @@ import 'package:rxdart/rxdart.dart';
 import 'pages/homepage.dart';
 import 'draw_screen.dart';
 import 'pages/serverTab.dart';
+import 'main.dart';
 
 class GMessage {
   String command = "";
@@ -90,6 +91,7 @@ class GDraw {
 
     registerProtocolHandler("TOKEN", (GMessage msg) {
       token = msg.arguments[0];
+      homekey.currentState.setIgnoringFalse();
     });
 
     registerProtocolHandler("KEY", (GMessage msg) {
