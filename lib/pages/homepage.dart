@@ -38,6 +38,7 @@ class HomePageState extends State<HomePage>
       //Default tab controller wraps everything.
       length: 3, //Length of Tabs
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(title: const Text("GlobalChat Draw")),
         body: Container(
           child: TabBarView(
