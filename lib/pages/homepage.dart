@@ -13,7 +13,16 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin<HomePage> {
+    with
+        AutomaticKeepAliveClientMixin<HomePage>,
+        SingleTickerProviderStateMixin {
+  final List<Tab> myTabs = <Tab>[
+    new Tab(text: 'Server'),
+    new Tab(text: 'Chat'),
+    new Tab(text: 'Draw'),
+  ];
+
+  TabController tabController;
   @override
   bool get wantKeepAlive => true;
 
@@ -30,6 +39,13 @@ class HomePageState extends State<HomePage>
     super.initState();
 
     ignoring = true;
+    tabController = new TabController(vsync: this, length: myTabs.length);
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -42,6 +58,7 @@ class HomePageState extends State<HomePage>
         appBar: AppBar(title: const Text("GlobalChat Draw")),
         body: Container(
           child: TabBarView(
+            controller: tabController,
             physics: NeverScrollableScrollPhysics(),
             //Pages Switches on selection of the respective tabs.
             children: <Widget>[
@@ -65,20 +82,8 @@ class HomePageState extends State<HomePage>
           child: Container(
             //Container used for rounded Corners on top.
             child: TabBar(
-              tabs: <Widget>[
-                Tab(
-                  //Tab 1
-                  child: Text('Servers'),
-                ),
-                Tab(
-                  //Tab 1
-                  child: Text('Chat'),
-                ),
-                Tab(
-                  //Tab 2
-                  child: Text('Draw'),
-                ),
-              ],
+              controller: tabController,
+              tabs: myTabs,
             ),
             alignment: Alignment.center,
             height: 64,

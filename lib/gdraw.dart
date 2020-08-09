@@ -45,6 +45,8 @@ class GDraw {
   String handle;
   String password; // plaintext password
 
+  String server_name;
+
   int canvasSizeX;
   int canvasSizeY = 0;
   int totalPoints;
@@ -55,6 +57,7 @@ class GDraw {
     registerProtocolHandler("ALERT", (msg) {
       var message = msg.arguments[0];
       showAlertDialog(context, "Server Alert", message);
+      homekey.currentState.tabController.animateTo(0);
     });
 
     registerProtocolHandler("CANVAS", (msg) {
@@ -91,7 +94,10 @@ class GDraw {
 
     registerProtocolHandler("TOKEN", (GMessage msg) {
       token = msg.arguments[0];
+      handle = msg.arguments[1];
+      server_name = msg.arguments[2];
       homekey.currentState.setIgnoringFalse();
+      homekey.currentState.tabController.animateTo(1);
     });
 
     registerProtocolHandler("KEY", (GMessage msg) {
