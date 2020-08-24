@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:core';
 // import 'package:draw/event/event.dart';
 import 'package:draw/draw_screen.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,15 @@ String host;
 int port;
 String password;
 String handle;
+List<Server> serverList = [];
+
+class Server {
+  String ip;
+  int port;
+  String name;
+
+  Server(this.name, this.ip, this.port);
+}
 
 class ServerTab extends StatefulWidget {
   //Tab 2
@@ -76,6 +87,39 @@ class _ServerTabState extends State<ServerTab>
     super.initState();
     //Global Variables gets initiated.
     _loadPrefs();
+    refresh();
+  }
+
+  refresh() async {
+    var url =
+        'https://wonderful-heyrovsky-0c77d0.netlify.app/.netlify/functions/msl';
+
+    var response = await http.get(url);
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    LineSplitter ls = new LineSplitter();
+
+    List<String> servers = ls.convert(response.body);
+
+    setState(() {
+      for (var server in servers) {
+        var info = server.split("::!!::");
+        serverList.add(Server(info[1], info[2], int.parse(info[3])));
+      }
+    });
+  }
+
+  _buildListItem(Server server, BuildContext context, int index) {
+    return Card(
+        child: GestureDetector(
+            onTap: () {
+              setState(() {
+                hostText = TextEditingController(text: server.ip);
+                portText = TextEditingController(text: server.port.toString());
+              });
+            },
+            child: Text(server.name ?? "")));
   }
 
   @override
@@ -85,6 +129,21 @@ class _ServerTabState extends State<ServerTab>
       child: Column(
         children: <Widget>[
           SizedBox(height: 30),
+          Expanded(
+            child: ListView.builder(
+              itemBuilder: (BuildContext ctxt, int index) {
+                return _buildListItem(serverList[index], ctxt, index);
+              },
+              itemCount: serverList.length,
+            ),
+          ),
+          RaisedButton(
+            onPressed: () {
+              refresh();
+            },
+            child: Text('Refresh'),
+            elevation: 0,
+          ),
           Text("Handle"),
           TextField(
             controller: handleText,
