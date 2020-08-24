@@ -102,7 +102,7 @@ class GDraw {
 
     registerProtocolHandler("KEY", (GMessage msg) {
       serverPublicKey = msg.arguments[0].trim();
-      if (password != "") {
+      if (password != "" && password != null) {
         List<int> passwordBytes = utf8.encode(password);
         var encryptedPassword =
             Sodium.cryptoBoxSeal(passwordBytes, base64Decode(serverPublicKey));

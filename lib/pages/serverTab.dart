@@ -115,8 +115,10 @@ class _ServerTabState extends State<ServerTab>
         child: GestureDetector(
             onTap: () {
               setState(() {
-                hostText = TextEditingController(text: server.ip);
-                portText = TextEditingController(text: server.port.toString());
+                host = server.ip;
+                hostText = TextEditingController(text: host);
+                port = server.port;
+                portText = TextEditingController(text: port.toString());
               });
             },
             child: Text(server.name ?? "")));
