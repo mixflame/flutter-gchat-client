@@ -113,6 +113,18 @@ class GDraw {
       }
     });
 
+    registerProtocolHandler("SAY", (GMessage msg) {
+      var pk = ourKeyPair.pk;
+      var ciphertext = base64.normalize(msg.arguments[1]);
+      List<int> messageBytes = base64Decode(ciphertext);
+      var handle = msg.arguments[0];
+      var decryptedText =
+          Sodium.cryptoBoxSealOpen(messageBytes, pk, ourKeyPair.sk);
+      var message = utf8.decode(decryptedText);
+
+      chatkey.currentState.addMessage(handle, message);
+    });
+
     // gdraw.registerProtocolHandler("ENDPOINTS", (msg) {});
 
     Socket.connect(host, port).then((Socket _sock) {

@@ -98,6 +98,10 @@ class _ServerTabState extends State<ServerTab>
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
 
+    if (response.statusCode != 200) {
+      return;
+    }
+
     LineSplitter ls = new LineSplitter();
 
     List<String> servers = ls.convert(response.body);

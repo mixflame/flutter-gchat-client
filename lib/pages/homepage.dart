@@ -5,6 +5,8 @@ import '../chat_screen.dart';
 
 final drawkey = new GlobalKey<DrawState>();
 
+final chatkey = new GlobalKey<ChatScreenState>();
+
 class HomePage extends StatefulWidget {
   HomePage({Key key}) : super(key: key);
 
@@ -66,7 +68,7 @@ class HomePageState extends State<HomePage>
               ServerTab(),
 
               //TabView 2
-              ChatScreen(),
+              ChatScreen(key: chatkey),
 
               //ChatTab(),
 
