@@ -102,6 +102,7 @@ class _ServerTabState extends State<ServerTab>
 
     List<String> servers = ls.convert(response.body);
 
+    serverList = [];
     setState(() {
       for (var server in servers) {
         var info = server.split("::!!::");
