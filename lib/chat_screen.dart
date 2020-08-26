@@ -8,10 +8,13 @@ class ChatScreen extends StatefulWidget {
   }
 }
 
-class ChatScreenState extends State<ChatScreen> {
+class ChatScreenState extends State<ChatScreen>
+    with AutomaticKeepAliveClientMixin<ChatScreen> {
   String chatText = "";
   List<Text> textChildren;
   List<String> chat_buffer = [];
+
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
